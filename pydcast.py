@@ -123,8 +123,9 @@ class Feed(object):
         chantitle.text = self.title
         chanlink = etree.SubElement(channel, 'link')
         chanlink.text = self.link
-        chandescr = etree.SubElement(channel, 'description')
-        chandescr.text = self.description
+        if self.description:
+            chandescr = etree.SubElement(channel, 'description')
+            chandescr.text = self.description
         if self.author:
             chanauthor = etree.SubElement(channel, itunes + 'author')
             chanauthor.text = self.author
