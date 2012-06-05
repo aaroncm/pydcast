@@ -4,7 +4,13 @@ from hsaudiotag import mpeg
 from email.utils import formatdate
 
 
-def format_secs_to_hhmmss(seconds):
+class PydcastError(Exception):
+    pass
+
+
+def format_secs_to_hmmss(seconds):
+    """Converts a duration of integer seconds to a string H:MM:SS for
+    use in the feed."""
     hours = seconds // (60 * 60)
     seconds %= (60 * 60)
     minutes = seconds // 60
@@ -13,18 +19,40 @@ def format_secs_to_hhmmss(seconds):
 
 
 def validate_item(item):
+    """Verify that an object is a Pydcast.Item before adding it to the feed.
+    This could stand to be duck-typed instead, probably."""
     if type(item) == Item:
         return True
     else:
         raise TypeError("must be a pydcast Item object")
 
 
-class PydcastError(Exception):
-    pass
+def get_from_tag(mpegobject, tagname):
+    """Get an individual id3 tag property from the hsaudiotag Mpeg object.
+    Falls back from id3v2 to id3v1; note that if there is no tag at all,
+    hsaudiotag will return an empty string when querying id3v1."""
+    try:
+        return getattr(mpegobject.id3v2, tagname)
+    except TypeError:
+        return getattr(mpegobject.id3v1, tagname)
 
 
 class Item(object):
-    def __init__(self, from_file):
+    """An individual mp3 item for inclusion in the a Feed."""
+
+    def __init__(self, from_file, title=None, author=None,
+                       subtitle=None, summary=None):
+        """Create a new mp3 Item for inclusion in a Feed.
+        Required args:
+            from_file -- the mp3 filename to be podcast. We will try to extract
+                         sane defaults from it if the other args are missing.
+                         Can include a subdirectory, but not an absolute path.
+
+        Optional keyword args, all used by podcast readers:
+            title -- default is the filename (with leading path stripped)
+            author -- default is blank
+            subtitle -- default is blank
+            summary -- default is a combination like 'filename - title'"""
         m = mpeg.Mpeg(from_file)
         if m.duration == 0:
             # hsaudiotag is very forgiving; more so than we want to be.
@@ -34,29 +62,32 @@ class Item(object):
         self.shortfilename = os.path.basename(from_file)
         self.filename = from_file
         self.filesize = str(m.size)
-        self.duration = format_secs_to_hhmmss(m.duration)
+        self.duration = format_secs_to_hmmss(m.duration)
         self.pubdate = formatdate(os.stat(from_file).st_ctime)
-        try:
-            self.title = m.id3v2.title
-        except TypeError:
-            try:
-                self.title = m.id3v1.title
-            except TypeError:
-                self.title = self.shortfilename
 
-        try:
-            self.author = m.id3v2.artist
-        except TypeError:
-            try:
-                self.author = m.id3v1.artist
-            except TypeError:
-                self.author = None
+        self.title = title if title else get_from_tag(m, 'title')
+        if self.title == '':
+            self.title = self.shortfilename
+        self.author = author if author else get_from_tag(m, 'artist')
+        self.subtitle = subtitle if subtitle else ''
+        self.summary = summary if summary else "%s - %s" % \
+                                (self.shortfilename, self.title)
 
 
 class Feed(object):
-
+    """A podcast feed generator."""
     def __init__(self, title='MP3 Feed', baseurl=None, link=None,
                 description=None, author=None):
+        """Create a pydcast feed.
+        Requred args:
+            baseurl -- web url under which the files will be located.
+                       individual item urls are baseurl + filename.
+                         (where filename can include a subdirectory path)
+            link -- address at which the podcast xml file will be published.
+        Optional args:
+            title -- Title for the feed; default is 'MP3 Feed'
+            description -- used by podcast readers; default is blank
+            author -- used by podcast readers; default is blank"""
         self.item_list = []
         self.title = title
         if baseurl == None:
@@ -72,13 +103,16 @@ class Feed(object):
         self.author = author
 
     def append(self, item):
+        """Add a pydcast Item to the Feed"""
         if validate_item(item):
             self.item_list.append(item)
 
     def __len__(self):
+        """Number of items in the Feed"""
         return len(self.item_list)
 
     def __str__(self):
+        """Returns the xml text for the podcast feed itself."""
         itunes_url = "http://www.itunes.com/dtds/podcast-1.0.dtd"
         itunes = '{%s}' % itunes_url
         nsmap = {'itunes': itunes_url}
@@ -108,9 +142,9 @@ class Feed(object):
                 author = etree.SubElement(item, itunes + 'author')
                 author.text = i.author
             subtitle = etree.SubElement(item, itunes + 'subtitle')
-            subtitle.text = i.title
+            subtitle.text = i.subtitle
             summary = etree.SubElement(item, itunes + 'summary')
-            summary.text = i.title
+            summary.text = i.summary
             duration = etree.SubElement(item, itunes + 'duration')
             duration.text = i.duration
             pubdate = etree.SubElement(item, 'pubDate')

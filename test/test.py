@@ -3,7 +3,7 @@ import os
 import unittest
 import nose
 from email.utils import formatdate
-from nose.tools import *
+from nose.tools import eq_, raises
 
 testdir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(testdir, '..'))
@@ -20,6 +20,7 @@ class PydcastTests(unittest.TestCase):
         self.test1mp3 = os.path.join(testdir, 'test1.mp3')
         self.test2mp3 = os.path.join(testdir, 'test2.mp3')
         self.testbadmp3 = os.path.join(testdir, 'testbad.mp3')
+        self.testblankmp3 = os.path.join(testdir, 'testblank.mp3')
 
     def test_item_creation(self):
         item = pydcast.Item(self.test1mp3)
@@ -31,9 +32,27 @@ class PydcastTests(unittest.TestCase):
         eq_(item.author, "Test Artist One")
         eq_(item.filename, self.test1mp3)
         eq_(item.shortfilename, 'test1.mp3')
+        eq_(item.subtitle, '')
+        eq_(item.summary, 'test1.mp3 - Test Title One')
         eq_(item.filesize, '33563')
         eq_(item.duration, '0:00:02')
         eq_(item.pubdate, formatdate(os.stat(self.test1mp3).st_ctime))
+
+    def test_item_without_tag(self):
+        item = pydcast.Item(self.testblankmp3)
+        eq_(item.title, 'testblank.mp3')
+        eq_(item.author, "")
+
+    def test_item_with_explicit_attributes(self):
+        item = pydcast.Item(self.test1mp3,
+                            title="Explicit Title",
+                            author="Explicit Author",
+                            subtitle="Explicit Subtitle",
+                            summary="Explicit Summary")
+        eq_(item.title, "Explicit Title")
+        eq_(item.author, "Explicit Author")
+        eq_(item.subtitle, "Explicit Subtitle")
+        eq_(item.summary, "Explicit Summary")
 
     @raises(pydcast.PydcastError)
     def test_item_fails_on_bad_duration(self):
