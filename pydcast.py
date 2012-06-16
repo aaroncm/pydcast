@@ -41,7 +41,7 @@ class Item(object):
     """An individual mp3 item for inclusion in the a Feed."""
 
     def __init__(self, from_file, title=None, author=None,
-                       subtitle=None, summary=None):
+                       subtitle=None, summary=None, description=None):
         """Create a new mp3 Item for inclusion in a Feed.
         Required args:
             from_file -- the mp3 filename to be podcast. We will try to extract
@@ -98,8 +98,7 @@ class Feed(object):
         if link == None:
             raise ValueError("a feed link is required")
         self.link = link
-        if description:
-            self.description = description
+        self.description = description
         self.author = author
 
     def append(self, item):
