@@ -17,6 +17,7 @@ class PydcastTests(unittest.TestCase):
         self.link = 'http://example.com/rss.xml'
         self.description = 'A Test Description'
         self.author = 'Somebody'
+        self.imageurl = 'http://example.com/image.png'
         self.test1mp3 = os.path.join(testdir, 'test1.mp3')
         self.test2mp3 = os.path.join(testdir, 'test2.mp3')
         self.testbadmp3 = os.path.join(testdir, 'testbad.mp3')
@@ -48,11 +49,13 @@ class PydcastTests(unittest.TestCase):
                             title="Explicit Title",
                             author="Explicit Author",
                             subtitle="Explicit Subtitle",
-                            summary="Explicit Summary")
+                            summary="Explicit Summary",
+                            imageurl="http://example.com/singleimage.png")
         eq_(item.title, "Explicit Title")
         eq_(item.author, "Explicit Author")
         eq_(item.subtitle, "Explicit Subtitle")
         eq_(item.summary, "Explicit Summary")
+        eq_(item.imageurl, "http://example.com/singleimage.png")
 
     @raises(pydcast.PydcastError)
     def test_item_fails_on_bad_duration(self):
@@ -79,12 +82,14 @@ class PydcastTests(unittest.TestCase):
                          title=self.title,
                          link=self.link,
                          description=self.description,
-                         author=self.author)
+                         author=self.author,
+                         imageurl=self.imageurl)
         eq_(f.baseurl, self.baseurl)
         eq_(f.title, self.title)
         eq_(f.link, self.link)
         eq_(f.description, self.description)
         eq_(f.author, self.author)
+        eq_(f.imageurl, self.imageurl)
 
     def test_adding_items_to_feed(self):
         f = pydcast.Feed(baseurl=self.baseurl, link=self.link)

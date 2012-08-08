@@ -41,7 +41,8 @@ class Item(object):
     """An individual mp3 item for inclusion in the a Feed."""
 
     def __init__(self, from_file, title=None, author=None,
-                       subtitle=None, summary=None, description=None):
+                       subtitle=None, summary=None, description=None,
+                       imageurl=None):
         """Create a new mp3 Item for inclusion in a Feed.
         Required args:
             from_file -- the mp3 filename to be podcast. We will try to extract
@@ -66,18 +67,22 @@ class Item(object):
         self.pubdate = formatdate(os.stat(from_file).st_ctime)
 
         self.title = title if title else get_from_tag(m, 'title')
-        if self.title == '':
-            self.title = self.shortfilename
+        self.titler()
+        self.imageurl = imageurl
         self.author = author if author else get_from_tag(m, 'artist')
         self.subtitle = subtitle if subtitle else ''
         self.summary = summary if summary else "%s - %s" % \
                                 (self.shortfilename, self.title)
 
+    def titler(self):
+        if self.title == '':
+            self.title = self.shortfilename
+
 
 class Feed(object):
     """A podcast feed generator."""
     def __init__(self, title='MP3 Feed', baseurl=None, link=None,
-                description=None, author=None):
+                description=None, author=None, imageurl=None):
         """Create a pydcast feed.
         Requred args:
             baseurl -- web url under which the files will be located.
@@ -100,6 +105,7 @@ class Feed(object):
         self.link = link
         self.description = description
         self.author = author
+        self.imageurl = imageurl
 
     def append(self, item):
         """Add a pydcast Item to the Feed"""
@@ -149,6 +155,9 @@ class Feed(object):
             duration.text = i.duration
             pubdate = etree.SubElement(item, 'pubDate')
             pubdate.text = i.pubdate
+            if i.imageurl:
+                imageurl = etree.SubElement(item, itunes + 'image')
+                imageurl.text = i.imageurl
 
         return etree.tostring(rss, xml_declaration=True, encoding="UTF-8",
                                 pretty_print=True)
