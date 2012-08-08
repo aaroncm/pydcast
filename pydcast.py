@@ -19,8 +19,8 @@ def format_secs_to_hmmss(seconds):
 
 
 def validate_item(item):
-    """Verify that an object is a Pydcast.Item before adding it to the feed.
-    This could stand to be duck-typed instead, probably."""
+    """Verify that an object is a Pydcast.Item before adding it to the feed."""
+    # This could stand to be duck-typed instead, probably.
     if type(item) == Item:
         return True
     else:
@@ -82,7 +82,8 @@ class Item(object):
 class Feed(object):
     """A podcast feed generator."""
     def __init__(self, title='MP3 Feed', baseurl=None, link=None,
-                description=None, author=None, imageurl=None):
+                description=None, summary=None, author=None,
+                imageurl=None, ownername=None, owneremail=None):
         """Create a pydcast feed.
         Requred args:
             baseurl -- web url under which the files will be located.
@@ -91,8 +92,11 @@ class Feed(object):
             link -- address at which the podcast xml file will be published.
         Optional args:
             title -- Title for the feed; default is 'MP3 Feed'
-            description -- used by podcast readers; default is blank
-            author -- used by podcast readers; default is blank"""
+            description -- used by podcast readers; default is not used
+            summary -- used by podcast readers; default is description
+            author -- used by podcast readers; default is not used
+            owneremail -- for itunes; default is not used
+            ownername -- for itunes, if owneremail present; default is not used"""
         self.item_list = []
         self.title = title
         if baseurl == None:
@@ -104,8 +108,11 @@ class Feed(object):
             raise ValueError("a feed link is required")
         self.link = link
         self.description = description
+        self.summary = summary if summary else description
         self.author = author
         self.imageurl = imageurl
+        self.ownername = ownername
+        self.owneremail = owneremail
 
     def append(self, item):
         """Add a pydcast Item to the Feed"""
@@ -134,6 +141,17 @@ class Feed(object):
         if self.author:
             chanauthor = etree.SubElement(channel, itunes + 'author')
             chanauthor.text = self.author
+        if self.owneremail:
+            owner = etree.SubElement(channel, itunes + 'owner')
+            owneremail = etree.SubElement(owner, itunes + 'email')
+            owneremail.text = self.owneremail
+            if self.ownername:
+                ownername = etree.SubElement(owner, itunes + 'name')
+                ownername.text = self.ownername
+
+        if self.imageurl:
+            fimageurl = etree.SubElement(channel, itunes + 'image')
+            fimageurl.attrib['href'] = self.imageurl
 
         for i in self.item_list:
             item = etree.SubElement(channel, 'item')
@@ -156,8 +174,8 @@ class Feed(object):
             pubdate = etree.SubElement(item, 'pubDate')
             pubdate.text = i.pubdate
             if i.imageurl:
-                imageurl = etree.SubElement(item, itunes + 'image')
-                imageurl.text = i.imageurl
+                iimageurl = etree.SubElement(item, itunes + 'image')
+                iimageurl.attrib['href'] = i.imageurl
 
         return etree.tostring(rss, xml_declaration=True, encoding="UTF-8",
                                 pretty_print=True)

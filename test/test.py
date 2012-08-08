@@ -16,8 +16,11 @@ class PydcastTests(unittest.TestCase):
         self.baseurl = 'http://example.com/'
         self.link = 'http://example.com/rss.xml'
         self.description = 'A Test Description'
+        self.summary = 'A test summary'
         self.author = 'Somebody'
         self.imageurl = 'http://example.com/image.png'
+        self.ownername = 'Testy Tester'
+        self.owneremail = 'test@example.com'
         self.test1mp3 = os.path.join(testdir, 'test1.mp3')
         self.test2mp3 = os.path.join(testdir, 'test2.mp3')
         self.testbadmp3 = os.path.join(testdir, 'testbad.mp3')
@@ -82,14 +85,25 @@ class PydcastTests(unittest.TestCase):
                          title=self.title,
                          link=self.link,
                          description=self.description,
+                         summary=self.summary,
                          author=self.author,
-                         imageurl=self.imageurl)
+                         imageurl=self.imageurl,
+                         ownername=self.ownername,
+                         owneremail=self.owneremail)
         eq_(f.baseurl, self.baseurl)
         eq_(f.title, self.title)
         eq_(f.link, self.link)
         eq_(f.description, self.description)
+        eq_(f.summary, self.summary)
         eq_(f.author, self.author)
         eq_(f.imageurl, self.imageurl)
+        eq_(f.ownername, self.ownername)
+        eq_(f.owneremail, self.owneremail)
+
+    def test_summary_is_description_if_blank(self):
+        f = pydcast.Feed(baseurl=self.baseurl, link=self.link,
+                         description=self.description)
+        eq_(f.summary, self.description)
 
     def test_adding_items_to_feed(self):
         f = pydcast.Feed(baseurl=self.baseurl, link=self.link)
