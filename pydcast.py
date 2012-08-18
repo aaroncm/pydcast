@@ -4,10 +4,6 @@ from hsaudiotag import mpeg
 from email.utils import formatdate
 
 
-class PydcastError(Exception):
-    pass
-
-
 def format_secs_to_hmmss(seconds):
     """Converts a duration of integer seconds to a string H:MM:SS for
     use in the feed."""
@@ -58,7 +54,7 @@ class Item(object):
         if m.duration == 0:
             # hsaudiotag is very forgiving; more so than we want to be.
             # this seems to indicate a malformed mp3 file.
-            raise PydcastError("file %s appears to be corrupt" % from_file)
+            raise ValueError("file %s appears to be corrupt" % from_file)
 
         self.shortfilename = os.path.basename(from_file)
         self.filename = from_file

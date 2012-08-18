@@ -60,7 +60,7 @@ class PydcastTests(unittest.TestCase):
         eq_(item.summary, "Explicit Summary")
         eq_(item.imageurl, "http://example.com/singleimage.png")
 
-    @raises(pydcast.PydcastError)
+    @raises(ValueError)
     def test_item_fails_on_bad_duration(self):
         pydcast.Item(self.testbadmp3)
 
