@@ -34,6 +34,7 @@ def get_from_tag(mpegobject, tagname):
 
 
 class Item(object):
+    #  TODO: This doesn't need to be a class. Refactor to a dict in the Feed.append method.
     """An individual mp3 item for inclusion in the a Feed."""
 
     def __init__(self, from_file, title=None, author=None,
