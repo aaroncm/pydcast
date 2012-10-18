@@ -1,5 +1,6 @@
 import os
 from lxml import etree
+from lxml.builder import ElementMaker
 from hsaudiotag import mpeg
 from email.utils import formatdate
 
@@ -123,56 +124,43 @@ class Feed(object):
     def __str__(self):
         """Returns the xml text for the podcast feed itself."""
         itunes_url = "http://www.itunes.com/dtds/podcast-1.0.dtd"
-        itunes = '{%s}' % itunes_url
-        nsmap = {'itunes': itunes_url}
+        E = ElementMaker(nsmap={'itunes': itunes_url})
+        iE = ElementMaker(namespace=itunes_url, nsmap={'itunes': itunes_url})
 
-        rss = etree.Element('rss', version="2.0", nsmap=nsmap)
-        channel = etree.SubElement(rss, 'channel')
-        chantitle = etree.SubElement(channel, 'title')
-        chantitle.text = self.title
-        chanlink = etree.SubElement(channel, 'link')
-        chanlink.text = self.link
+        rss = E.rss({'version': '2.0'})
+        channel = E.channel(E.title(self.title), E.link(self.link))
+        rss.append(channel)
         if self.description:
-            chandescr = etree.SubElement(channel, 'description')
-            chandescr.text = self.description
+            channel.append(E.description(self.description))
         if self.author:
-            chanauthor = etree.SubElement(channel, itunes + 'author')
-            chanauthor.text = self.author
+            channel.append(iE.author(self.author))
         if self.owneremail:
-            owner = etree.SubElement(channel, itunes + 'owner')
-            owneremail = etree.SubElement(owner, itunes + 'email')
-            owneremail.text = self.owneremail
+            owner = iE.owner(iE.email(self.owneremail))
+            channel.append(owner)
             if self.ownername:
-                ownername = etree.SubElement(owner, itunes + 'name')
-                ownername.text = self.ownername
+                owner.append(iE.name(self.ownername))
 
         if self.imageurl:
-            fimageurl = etree.SubElement(channel, itunes + 'image')
-            fimageurl.attrib['href'] = self.imageurl
+            channel.append(iE.image({'href': self.imageurl}))
 
         for i in self.item_list:
-            item = etree.SubElement(channel, 'item')
-            title = etree.SubElement(item, 'title')
-            title.text = i.title
-            link = etree.SubElement(item, 'link')
+            # i (iterator) vs item (lxml element) is confusing
             itemurl = self.baseurl + i.shortfilename
-            link.text = itemurl
-            etree.SubElement(item, 'enclosure', url=itemurl,
-                            length=i.filesize, type='audio/mpeg')
+            item = E.item(E.title(i.title),
+                    E.link(itemurl),
+                    E.pubdate(i.pubdate),
+                    E.enclosure({'url': itemurl,
+                                 'length': i.filesize,
+                                 'type': 'audio/mpeg'}),
+                    iE.subtitle(i.subtitle),
+                    iE.summary(i.summary),
+                    iE.duration(i.duration),
+                    )
             if i.author:
-                author = etree.SubElement(item, itunes + 'author')
-                author.text = i.author
-            subtitle = etree.SubElement(item, itunes + 'subtitle')
-            subtitle.text = i.subtitle
-            summary = etree.SubElement(item, itunes + 'summary')
-            summary.text = i.summary
-            duration = etree.SubElement(item, itunes + 'duration')
-            duration.text = i.duration
-            pubdate = etree.SubElement(item, 'pubDate')
-            pubdate.text = i.pubdate
+                item.append(iE.author(i.author))
             if i.imageurl:
-                iimageurl = etree.SubElement(item, itunes + 'image')
-                iimageurl.attrib['href'] = i.imageurl
+                item.append(iE.image({'href': i.imageurl}))
+            channel.append(item)
 
         return etree.tostring(rss, xml_declaration=True, encoding="UTF-8",
                                 pretty_print=True)
