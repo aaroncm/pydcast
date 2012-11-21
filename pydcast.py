@@ -121,6 +121,24 @@ class Feed(object):
         """Number of items in the Feed"""
         return len(self.item_list)
 
+    def __contains__(self, item):
+        if item in self.item_list:
+            return True
+        else:
+            return any([item == i.title for i in self.item_list])
+
+    def __setitem__(self, index, item):
+        pass
+
+    def __getitem__(self, item):
+        pass
+
+    def __delitem__(self, index):
+        del self.item_list[index]
+
+    def remove(self, item):
+        self.item_list.remove(item)
+
     def __str__(self):
         """Returns the xml text for the podcast feed itself."""
         itunes_url = "http://www.itunes.com/dtds/podcast-1.0.dtd"

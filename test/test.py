@@ -105,11 +105,35 @@ class PydcastTests(unittest.TestCase):
                          description=self.description)
         eq_(f.summary, self.description)
 
+    def test_contains(self):
+        f = pydcast.Feed(baseurl=self.baseurl, link=self.link)
+        i = pydcast.Item(self.test1mp3)
+        f.append(i)
+        assert(i in f)
+
+    def test_contains_by_title(self):
+        f = pydcast.Feed(baseurl=self.baseurl, link=self.link)
+        i = pydcast.Item(self.test1mp3)
+        f.append(i)
+        assert(i.title in f)
+
     def test_adding_items_to_feed(self):
         f = pydcast.Feed(baseurl=self.baseurl, link=self.link)
         for i in range(3):
             f.append(pydcast.Item(self.test1mp3))
         eq_(3, len(f))
+
+    def test_delete_item_from_feed(self):
+        f = pydcast.Feed(baseurl=self.baseurl, link=self.link)
+        i = pydcast.Item(self.test1mp3)
+        f.append(i)
+        eq_(1, len(f))
+        del(f[0])
+        eq_(0, len(f))
+        f.append(i)
+        eq_(1, len(f))
+        f.remove(i)
+        eq_(0, len(f))
 
     @raises(TypeError)
     def test_adding_other_objects_to_feed(self):
